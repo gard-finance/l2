@@ -154,7 +154,7 @@ mod Pool {
         math: ContractAddress
     ) {
         self._asset.write(asset);
-        self._owner.write(get_caller_address());
+        self._owner.write(owner);
         self._last_wave.write(get_block_timestamp());
         self._l1_controller.write(l1_controller);
         self._math.write(math);
@@ -189,7 +189,7 @@ mod Pool {
 
         fn withdraw(ref self: ContractState, amount: u256) -> bool {
             IGALPDispatcher {
-                contract_address: self._asset.read()
+                contract_address: self._lp.read()
             }.burn(get_caller_address(), amount);
             add_withdraw_to_total(ref self, amount);
             add_pending_withdraw(ref self, get_caller_address(), amount);
@@ -209,7 +209,7 @@ mod Pool {
         fn launch_wave(ref self: ContractState) -> bool {
             assert(get_caller_address() == self._owner.read(), 'Only owner');
             assert(self._wave_launched.read() == false, 'Wave already launched');
-            assert(self._last_wave.read() + 24 * 3600 < get_block_timestamp(), 'Wave is every 24h');
+            // assert(self._last_wave.read() + 24 * 3600 < get_block_timestamp(), 'Wave is every 24h');
             block_next_wave(ref self);
             let mut payload = ArrayTrait::new();
             let deposit_amount = self._total_pending_deposit_amount.read();

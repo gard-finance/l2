@@ -82,7 +82,7 @@ struct DepositOrWithdraw {
     wave_id: felt252
 }
 
-/// @dev Starknet contract facilitates deposits of amounts in the pool, enabling gas-efficient interaction with L1 networks.
+/// @dev Starknet contract facilitates deposits of amounts in the pool, enabling gas-efficient interaction with L1 networks
 #[starknet::contract]
 mod Pool {
     use starknet::ContractAddress;
@@ -101,7 +101,7 @@ mod Pool {
     use traits::Into;
     use super::DepositOrWithdraw;
 
-    /// @dev Structure is designed to store the state data.
+    /// @dev Structure is designed to store the state data
     #[storage]
     struct Storage {
         _wave_launched: bool,
@@ -248,7 +248,7 @@ mod Pool {
             true
         }
 
-        /// @dev Allows the contract owner to set the LP contract address, updating the state data, and returns true if the operation is successful.
+        /// @dev Allows the contract owner to set the LP contract address, updating the state data, and returns true if the operation is successful
         fn set_lp(ref self: ContractState, lp: ContractAddress) -> bool {
             assert(self._owner.read() == get_caller_address(), 'Only owner');
             self._lp.write(lp);
@@ -265,38 +265,38 @@ mod Pool {
             self._asset.read()
         }
 
-        /// @dev Returns the value of the last_wave variable stored in the contract state, representing the timestamp of the most recent wave.
+        /// @dev Returns the value of the last_wave variable stored in the contract state, representing the timestamp of the most recent wave
         fn last_wave(self: @ContractState) -> u64 {
             self._last_wave.read()
         }
 
-        /// @dev Returns the value of the _current_wave_id variable stored in the contract state, which is of type felt252.
+        /// @dev Returns the value of the _current_wave_id variable stored in the contract state, which is of type felt252
         fn current_wave_id(self: @ContractState) -> felt252 {
             self._current_wave_id.read()
         }
 
-        /// @dev Returns the wave rate value associated with the given wave_id, which is of type felt252, from the contract state. The wave rate is of type u256.
+        /// @dev Returns the wave rate value associated with the given wave_id, which is of type felt252, from the contract state, the wave rate is of type u256
         fn wave_rate(self: @ContractState, wave_id: felt252) -> u256 {
             self._wave_rate.read(wave_id)
         }
 
-        /// @dev Returns the value of the _total_pending_deposit_amount variable stored in the contract state, which represents the total amount of pending deposits. The amount is of type u256.
+        /// @dev Returns the value of the _total_pending_deposit_amount variable stored in the contract state, which represents the total amount of pending deposits. The amount is of type u256
         fn total_pending_deposit_amount(self: @ContractState) -> u256 {
             self._total_pending_deposit_amount.read()
         }
 
 
-        /// @dev Returns the value of the _total_pending_withdraw_amount variable stored in the contract state, which represents the total amount of pending withdrawals. The amount is of type u256.
+        /// @dev Returns the value of the _total_pending_withdraw_amount variable stored in the contract state, which represents the total amount of pending withdrawals. The amount is of type u256
         fn total_pending_withdraw_amount(self: @ContractState) -> u256 {
             self._total_pending_withdraw_amount.read()
         }
 
-        /// @dev Returns the value of the _pending_deposit variable associated with the specified account, which is of type ContractAddress, from the contract state. The return type is DepositOrWithdraw, representing the pending deposit details for the specified account.
+        /// @dev Returns the value of the _pending_deposit variable associated with the specified account, which is of type ContractAddress, from the contract state. The return type is DepositOrWithdraw, representing the pending deposit details for the specified account
         fn pending_deposit(self: @ContractState, account: ContractAddress) -> DepositOrWithdraw {
             self._pending_deposit.read(account)
         }
 
-        /// @dev Returns the value of the _pending_withdraw variable associated with the specified account, which is of type ContractAddress, from the contract state. The return type is DepositOrWithdraw, representing the pending withdrawal details for the specified account.
+        /// @dev Returns the value of the _pending_withdraw variable associated with the specified account, which is of type ContractAddress, from the contract state. The return type is DepositOrWithdraw, representing the pending withdrawal details for the specified account
         fn pending_withdraw(self: @ContractState, account: ContractAddress) -> DepositOrWithdraw {
             self._pending_withdraw.read(account)
         }
@@ -311,13 +311,13 @@ mod Pool {
             self._wave_launched.read()
         }
 
-        /// @dev Returns the value of the _l1_controller variable stored in the contract state, which is of type felt252. The variable represents the controller contract address associated with the Layer 1 system.
+        /// @dev Returns the value of the _l1_controller variable stored in the contract state, which is of type felt252. The variable represents the controller contract address associated with the Layer 1 system
         fn l1_controller(self: @ContractState) -> felt252 {
             self._l1_controller.read()
         }
     }
 
-    /// @dev This L1 handler function processes external system return data related to a wave, updating the contract state with wave information like the wave rate, current wave ID, and setting the wave launched status to false.
+    /// @dev This L1 handler function processes external system return data related to a wave, updating the contract state with wave information like the wave rate, current wave ID, and setting the wave launched status to false
     #[l1_handler]
     fn handle_wave_return(ref self: ContractState, from_address: felt252, wave_rate: u256) {
         assert(from_address == self._l1_controller.read(), 'Only controller');
@@ -335,7 +335,7 @@ mod Pool {
             .write(self._total_pending_deposit_amount.read() + amount);
     }
 
-    /// @dev adds a pending deposit entry for the specified account with the given amount, but it asserts that the account has not made a previous deposit (amount == 0) or claimed LPs (wave_id == 0) before adding the new pending deposit. The function sets the new pending deposit with the provided amount and the current wave ID from the contract state.
+    /// @dev adds a pending deposit entry for the specified account with the given amount, but it asserts that the account has not made a previous deposit (amount == 0) or claimed LPs (wave_id == 0) before adding the new pending deposit. The function sets the new pending deposit with the provided amount and the current wave ID from the contract state
     fn add_pending_deposit(ref self: ContractState, account: ContractAddress, amount: u256) {
         let deposit = self._pending_deposit.read(account);
         assert(deposit.amount == 0, 'claim LPs before depositing');
@@ -359,7 +359,7 @@ mod Pool {
             .write(self._total_pending_withdraw_amount.read() + amount);
     }
 
-    /// @dev Adds a pending withdrawal entry for the specified account with the given amount, but it asserts that the account has not made a previous withdrawal (amount == 0) or claimed assets (wave_id == 0) before adding the new pending withdrawal. The function sets the new pending withdrawal with the provided amount and the current wave ID from the contract state.
+    /// @dev Adds a pending withdrawal entry for the specified account with the given amount, but it asserts that the account has not made a previous withdrawal (amount == 0) or claimed assets (wave_id == 0) before adding the new pending withdrawal. The function sets the new pending withdrawal with the provided amount and the current wave ID from the contract state
     fn add_pending_withdraw(ref self: ContractState, account: ContractAddress, amount: u256) {
         let withdraw = self._pending_withdraw.read(account);
         assert(withdraw.amount == 0, 'claim assets before withdrawing');
@@ -371,18 +371,18 @@ mod Pool {
             )
     }
 
-    /// @dev Resets the pending withdrawal entry for the specified account to zero amount and zero wave_id in the contract state.
+    /// @dev Resets the pending withdrawal entry for the specified account to zero amount and zero wave_id in the contract state
     fn reset_pending_withdraw(ref self: ContractState, account: ContractAddress) {
         self._pending_withdraw.write(account, DepositOrWithdraw { amount: 0, wave_id: 0 });
     }
 
-    /// @dev Blocks the launching of the next wave by updating the contract state. It sets _wave_launched to true, indicating that the next wave has been blocked, and _last_wave to the current block timestamp to mark the time when the wave was blocked.
+    /// @dev Blocks the launching of the next wave by updating the contract state. It sets _wave_launched to true, indicating that the next wave has been blocked, and _last_wave to the current block timestamp to mark the time when the wave was blocked
     fn block_next_wave(ref self: ContractState) {
         self._wave_launched.write(true);
         self._last_wave.write(get_block_timestamp());
     }
 
-    /// @dev Resets the total pending deposit and withdrawal amounts in the contract state to zero. It sets _total_pending_deposit_amount and _total_pending_withdraw_amount to 0.
+    /// @dev Resets the total pending deposit and withdrawal amounts in the contract state to zero. It sets _total_pending_deposit_amount and _total_pending_withdraw_amount to 0
     fn reset_amounts(ref self: ContractState) {
         self._total_pending_deposit_amount.write(0);
         self._total_pending_withdraw_amount.write(0);

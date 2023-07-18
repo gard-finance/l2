@@ -3,13 +3,11 @@ use starknet::ContractAddress;
 #[starknet::interface]
 trait IPool<ContractState> {
     fn deposit(ref self: ContractState, amount: u256) -> bool;
-    fn claim_lp(
-        pending_withdraw: mapping<address, uint256>, lp_amount: u256, timestamp: u256
-    ) -> bool;
+    fn claim_lp(ref self: ContractState, lp_amount: u256, timestamp: u256) -> bool;
     fn withdraw(ref self: ContractState, amount: u256) -> bool;
-    fn claim_withdram(lp_amount: u256, timestamp: u256) -> bool;
+    fn claim_withdram(ref self: ContractState, lp_amount: u256, timestamp: u256) -> bool;
     fn launch_wave() -> bool;
-    fn wave_returned(amount: u256) -> bool;
+    fn wave_returned(ref self: ContractState, amount: u256) -> bool;
 }
 
 #[starknet::contract]

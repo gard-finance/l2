@@ -1,42 +1,10 @@
 use core::traits::Into;
 use starknet::ContractAddress;
 
-
 #[starknet::interface]
-trait IERC20<ContractState> {
-    fn name(self: @ContractState) -> felt252;
-    fn symbol(self: @ContractState) -> felt252;
-    fn decimals(self: @ContractState) -> u8;
-    fn total_supply(self: @ContractState) -> u256;
-    fn balance_of(self: @ContractState, account: ContractAddress) -> u256;
-    fn allowance(self: @ContractState, owner: ContractAddress, spender: ContractAddress) -> u256;
-    fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool;
-    fn transfer_from(
-        ref self: ContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
-    ) -> bool;
-    fn approve(ref self: ContractState, spender: ContractAddress, amount: u256) -> bool;
-    fn totalSupply(self: @ContractState) -> u256;
-    fn balanceOf(self: @ContractState, account: ContractAddress) -> u256;
-    fn transferFrom(
-        ref self: ContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
-    ) -> bool;
-    fn increase_allowance(
-        ref self: ContractState, spender: ContractAddress, added_value: u256
-    ) -> bool;
-    fn increaseAllowance(
-        ref self: ContractState, spender: ContractAddress, addedValue: u256
-    ) -> bool;
-    fn decrease_allowance(
-        ref self: ContractState, spender: ContractAddress, subtracted_value: u256
-    ) -> bool;
-    fn decreaseAllowance(
-        ref self: ContractState, spender: ContractAddress, subtractedValue: u256
-    ) -> bool;
-}
-
-#[starknet::interface]
-trait IGAToken<ContractState> {
-    fn bridge_to_l1(ref self: ContractState, recipient: felt252, amount: u256) -> bool;
+trait IGALP<ContractState> {
+    fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool;
+    fn burn(ref self: ContractState, from: ContractAddress, amount: u256) -> bool;
 }
 
 #[starknet::contract]
@@ -45,13 +13,15 @@ mod GAToken {
     use starknet::ContractAddress;
     use starknet::get_caller_address;
     use zeroable::Zeroable;
-    use super::IGAToken;
+    use super::IGALP;
     use starknet::syscalls::send_message_to_l1_syscall;
     use array::ArrayTrait;
     use traits::Into;
+    use l2::token::IERC20;
 
     #[storage]
     struct Storage {
+        _owner: ContractAddress,
         _name: felt252,
         _symbol: felt252,
         _total_supply: u256,
@@ -88,15 +58,16 @@ mod GAToken {
         symbol: felt252,
         initial_supply: u256,
         recipient: ContractAddress,
-        _l1_bridge: felt252
+        _l1_bridge: felt252,
+        _owner: ContractAddress
     ) {
-        initializer(ref self, name, symbol);
+        initializer(ref self, name, symbol, _owner);
         _mint(ref self, recipient, initial_supply);
         self._l1_bridge.write(_l1_bridge);
     }
 
     #[external(v0)]
-    impl ERC20 of super::IERC20<ContractState> {
+    impl ERC20 of IERC20<ContractState> {
         fn name(self: @ContractState) -> felt252 {
             self._name.read()
         }
@@ -175,24 +146,18 @@ mod GAToken {
     }
 
     #[external(v0)]
-    impl GAToken of super::IGAToken<ContractState> {
-        fn bridge_to_l1(ref self: ContractState, recipient: felt252, amount: u256) -> bool {
-            _burn(ref self, get_caller_address(), amount);
-            let mut calldata = ArrayTrait::new();
-            calldata.append(recipient.into());
-            calldata.append(amount.low.into());
-            calldata.append(amount.high.into());
-            send_message_to_l1_syscall(self._l1_bridge.read(), calldata.span()).unwrap_syscall();
+    impl GALP of super::IGALP<ContractState> {
+        fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
+            assert(self._owner.read() == get_caller_address(), 'Not the owner');
+            _mint(ref self, recipient, amount);
             true
         }
-    }
 
-    #[l1_handler]
-    fn mint(
-        ref self: ContractState, from_address: felt252, recipient: ContractAddress, amount: u256
-    ) {
-        assert(from_address == self._l1_bridge.read(), 'Invalid sender');
-        _mint(ref self, recipient, amount);
+        fn burn(ref self: ContractState, from: ContractAddress, amount: u256) -> bool {
+            assert(self._owner.read() == get_caller_address(), 'Not the owner');
+            _burn(ref self, from, amount);
+            true
+        }
     }
 
     //
@@ -200,9 +165,12 @@ mod GAToken {
     //
 
     #[internal]
-    fn initializer(ref self: ContractState, name_: felt252, symbol_: felt252) {
+    fn initializer(
+        ref self: ContractState, name_: felt252, symbol_: felt252, _owner: ContractAddress
+    ) {
         self._name.write(name_);
         self._symbol.write(symbol_);
+        self._owner.write(_owner);
     }
 
     #[internal]

@@ -44,6 +44,8 @@ mod GAToken {
     use starknet::syscalls::send_message_to_l1_syscall;
     use array::ArrayTrait;
     use traits::Into;
+    use super::IGATokenDispatcher;
+    use super::IGATokenDispatcherTrait;
 
     #[storage]
     struct Storage {
@@ -266,4 +268,3 @@ mod GAToken {
         }
     }
 }
-

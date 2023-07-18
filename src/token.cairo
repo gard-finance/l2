@@ -175,6 +175,7 @@ mod GAToken {
         }
     }
 
+    /// @dev Internal Functions implementation for the GAToken contract
     #[external(v0)]
     impl GAToken of super::IGAToken<ContractState> {
         fn bridge_to_l1(ref self: ContractState, recipient: felt252, amount: u256) -> bool {
@@ -188,6 +189,7 @@ mod GAToken {
         }
     }
 
+    /// @dev  L1 handler function that mints LP tokens for the recipient by transferring amount from the from_address on L1
     #[l1_handler]
     fn mint(
         ref self: ContractState, from_address: felt252, recipient: ContractAddress, amount: u256
@@ -195,6 +197,7 @@ mod GAToken {
         assert(from_address == self._l1_bridge.read(), 'Invalid sender');
         _mint(ref self, recipient, amount);
     }
+
 
     //
     // Internals

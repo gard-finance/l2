@@ -8,7 +8,7 @@ trait IGALP<ContractState> {
 }
 
 #[starknet::contract]
-mod GAToken {
+mod GALPToken {
     use integer::BoundedInt;
     use starknet::ContractAddress;
     use starknet::get_caller_address;

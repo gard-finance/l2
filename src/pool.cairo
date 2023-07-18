@@ -57,6 +57,11 @@ trait IPool<ContractState> {
     fn l1_controller(self: @ContractState) -> felt252;
 }
 
+#[starknet::interface]
+trait IMath<ContractState> {
+    fn u256_unsafe_divmod(self: @ContractState, a: u256, b: u256) -> u256;
+}
+
 #[derive(storage_access::StorageAccess, Drop, Copy, Serde)]
 struct DepositOrWithdraw {
     amount: u256,
@@ -80,6 +85,8 @@ mod Pool {
     use array::ArrayTrait;
     use traits::Into;
     use super::DepositOrWithdraw;
+    use super::IMathDispatcher;
+    use super::IMathDispatcherTrait;
 
     #[storage]
     struct Storage {
@@ -94,7 +101,8 @@ mod Pool {
         _pending_deposit: LegacyMap<ContractAddress, DepositOrWithdraw>,
         _pending_withdraw: LegacyMap<ContractAddress, DepositOrWithdraw>,
         _owner: ContractAddress,
-        _l1_controller: felt252
+        _l1_controller: felt252,
+        _math: ContractAddress
     }
 
     #[event]
@@ -142,12 +150,14 @@ mod Pool {
         ref self: ContractState,
         asset: ContractAddress,
         owner: ContractAddress,
-        l1_controller: felt252
+        l1_controller: felt252,
+        math: ContractAddress
     ) {
         self._asset.write(asset);
         self._owner.write(get_caller_address());
         self._last_wave.write(get_block_timestamp());
         self._l1_controller.write(l1_controller);
+        self._math.write(math);
     }
 
     #[external(v0)]
@@ -168,7 +178,13 @@ mod Pool {
             let wave_rate = self._wave_rate.read(deposit.wave_id);
             IGALPDispatcher {
                 contract_address: self._lp.read()
-            }.mint(get_caller_address(), deposit.amount / wave_rate)
+            }
+                .mint(
+                    get_caller_address(),
+                    IMathDispatcher {
+                        contract_address: self._math.read()
+                    }.u256_unsafe_divmod(deposit.amount, wave_rate)
+                )
         }
 
         fn withdraw(ref self: ContractState, amount: u256) -> bool {

@@ -57,7 +57,7 @@ mod GAToken {
         _total_supply: u256,
         _balances: LegacyMap<ContractAddress, u256>,
         _allowances: LegacyMap<(ContractAddress, ContractAddress), u256>,
-        _l1_bridge: felt252
+        _l1_bridge: felt252,
     }
 
     #[event]
@@ -88,7 +88,8 @@ mod GAToken {
         symbol: felt252,
         initial_supply: u256,
         recipient: ContractAddress,
-        _l1_bridge: felt252
+        _l1_bridge: felt252,
+        owner: ContractAddress
     ) {
         initializer(ref self, name, symbol);
         _mint(ref self, recipient, initial_supply);

@@ -62,17 +62,22 @@ trait IPool<ContractState> {
     /// @dev Function that returns the total amount of pending withdrawals stored in the contract state
     fn total_pending_withdraw_amount(self: @ContractState) -> u256;
     /// @dev Function that returns the pending deposit details for the specified account from the contract state
-    fn pending_deposit(self: ContractState, account: ContractAddress) -> DepositOrWithdraw;
+    fn pending_deposit(self: @ContractState, account: ContractAddress) -> DepositOrWithdraw;
     /// @dev Function that returns the pending withdrawal details for the specified account from the contract state
-    fn pending_withdraw(self: ContractState, account: ContractAddress) -> DepositOrWithdraw;
+    fn pending_withdraw(self: @ContractState, account: ContractAddress) -> DepositOrWithdraw;
     /// @dev Function that returns the contract address of the owner of the contract from the contract state
-    fn owner(self: ContractState) -> ContractAddress;
+    fn owner(self: @ContractState) -> ContractAddress;
     /// @dev Function that returns a boolean value indicating whether a wave has been launched or not from the contract state
-    fn wave_launched(self: ContractState) -> bool;
+    fn wave_launched(self: @ContractState) -> bool;
     /// @dev Function that returns the value of the _l1_controller variable stored in the contract state, which is of type felt252
-    fn l1_controller(self: ContractState) -> felt252;
+    fn l1_controller(self: @ContractState) -> felt252;
     /// @dev Function that returns the current wave ID from the contract state, which is of type `felt252`
     fn current_wave_id(self: @ContractState) -> felt252;
+}
+
+#[starknet::interface]
+trait IMath<ContractState> {
+    fn u256_unsafe_divmod(self: @ContractState, a: u256, b: u256) -> u256;
 }
 
 /// @dev Represents a DepositOrWithdraw with amout and wave_id value
@@ -100,6 +105,8 @@ mod Pool {
     use array::ArrayTrait;
     use traits::Into;
     use super::DepositOrWithdraw;
+    use super::IMathDispatcher;
+    use super::IMathDispatcherTrait;
 
     /// @dev Structure is designed to store the state data
     #[storage]
@@ -115,7 +122,8 @@ mod Pool {
         _pending_deposit: LegacyMap<ContractAddress, DepositOrWithdraw>,
         _pending_withdraw: LegacyMap<ContractAddress, DepositOrWithdraw>,
         _owner: ContractAddress,
-        _l1_controller: felt252
+        _l1_controller: felt252,
+        _math: ContractAddress
     }
 
     /// @dev Event that gets emitted when a Deposit, Withdraw, LPClaimed or WithdrawalClaimed is cast
@@ -168,13 +176,15 @@ mod Pool {
         ref self: ContractState,
         asset: ContractAddress,
         owner: ContractAddress,
-        l1_controller: felt252
+        l1_controller: felt252,
+        math: ContractAddress
     ) {
         /// @dev initialise the data
         self._asset.write(asset);
-        self._owner.write(get_caller_address());
+        self._owner.write(owner);
         self._last_wave.write(get_block_timestamp());
         self._l1_controller.write(l1_controller);
+        self._math.write(math);
     }
 
     /// @dev Implementation of IPool for ContractState
@@ -198,13 +208,19 @@ mod Pool {
             let wave_rate = self._wave_rate.read(deposit.wave_id);
             IGALPDispatcher {
                 contract_address: self._lp.read()
-            }.mint(get_caller_address(), deposit.amount / wave_rate)
+            }
+                .mint(
+                    get_caller_address(),
+                    IMathDispatcher {
+                        contract_address: self._math.read()
+                    }.u256_unsafe_divmod(deposit.amount, wave_rate)
+                )
         }
 
         /// @dev Allows the caller to withdraw a specified amount of LP tokens by burning them, updates the contract's internal state for the withdrawal, and returns true if the withdrawal is successful
         fn withdraw(ref self: ContractState, amount: u256) -> bool {
             IGALPDispatcher {
-                contract_address: self._asset.read()
+                contract_address: self._lp.read()
             }.burn(get_caller_address(), amount);
             add_withdraw_to_total(ref self, amount);
             add_pending_withdraw(ref self, get_caller_address(), amount);
@@ -227,7 +243,7 @@ mod Pool {
         fn launch_wave(ref self: ContractState) -> bool {
             assert(get_caller_address() == self._owner.read(), 'Only owner');
             assert(self._wave_launched.read() == false, 'Wave already launched');
-            assert(self._last_wave.read() + 24 * 3600 < get_block_timestamp(), 'Wave is every 24h');
+            // assert(self._last_wave.read() + 24 * 3600 < get_block_timestamp(), 'Wave is every 24h');
             block_next_wave(ref self);
             let mut payload = ArrayTrait::new();
             let deposit_amount = self._total_pending_deposit_amount.read();

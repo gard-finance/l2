@@ -1,0 +1,18 @@
+# Deployments
+
+## Goerli 1
+
+### GAToken
+
+- class_hash: 0x7c709409eb301591dfe1effb058dda9de1e63a6b27022424fac0560de7fe33c
+- crvUSD: 0x00c340bc85fca8a367a1ac4cf0a18532273786b8efe996802cd1b77f748db727
+
+### GALPToken
+
+- class_hash: 0x215db485f9b3e0a3c584394b705dbe4dd63807911b42221ef675ec51dbc3fdc
+- crvUD: 0x0379606e781b0cbf6e6d4d23c320107bcc5da2d6f81ad69bc57594663603e579
+
+### Pool
+
+- class_hash: 0x28f464ded1c4765363b46bf5baec790802f7750c652865aaf3c846e449b9fd8
+- crvUSD: 0x041f150dc37fdf2ebd67f5200a1466d4424d192ae539bd4c791fe446457d8793
